@@ -1,0 +1,55 @@
+- name: Deploy a web app
+  hosts: targets
+  tasks:
+    - name: Ping
+      ping:
+
+    - name: Update 
+      apt: update_cache=yes
+
+    - name: Upgrade all apt packages
+      apt: upgrade=dist
+
+    - name: Install all required dependencies
+      apt:
+       name: ['python', 'python-setuptools', 'python-dev', 'build-essential', 'python3-pip']
+
+       state: present
+
+    - name: Install MySQL database
+      apt: 
+       name: ['mysql-server', 'mysql-client']
+       state: present
+
+    - name: Start MySQL
+      service:
+        name: mysql
+        state: started
+        enabled: yes
+
+    - name: Create App database
+      mysql_db: name=employee_db state=present
+
+    - name: Create db user
+      mysql_user:
+        name: db_user
+        password: Passw0rd
+        priv: '*.*:ALL'
+        state: present 
+        host: '%'
+
+    - name: Install Python Flask
+      apt: 
+        name: ['flask', 'flask-mysql']
+        state: present
+
+    - name: Checkout a github repo and use refspec to fetch all pull requests
+      ansible.builtin.git:
+        repo: https://github.com/kodekloudhub/simple_web_application.git
+        dest: /src/ansible-examples
+        refspec: '+refs/pull/*:refs/heads/*'
+
+    - name: Start Web-server
+      shell: FLASK_APP=app.py nohup flask run --host=0.0.0.0 &
+
+
